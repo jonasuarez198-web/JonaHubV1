@@ -1,0 +1,85 @@
+-- JONA SPEED MINI (Delta)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local lp = Players.LocalPlayer
+local char, hum, hrp
+
+-- CONFIG
+local SPEED = 1        -- velocidad inicial
+local enabled = false
+
+local UI_SCALE = 0.7  -- 🔥 CAMBIÁ ESTO (0.5 = muy chico | 1 = normal)
+
+local function load()
+	char = lp.Character or lp.CharacterAdded:Wait()
+	hum = char:WaitForChild("Humanoid")
+	hrp = char:WaitForChild("HumanoidRootPart")
+end
+
+load()
+lp.CharacterAdded:Connect(load)
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,180*UI_SCALE,0,80*UI_SCALE)
+frame.Position = UDim2.new(.4,0,.45,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0.4,0)
+title.BackgroundTransparency = 1
+title.Text = "SPEED OFF"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(.4,0,.3,0)
+toggle.Position = UDim2.new(.05,0,.45,0)
+toggle.Text = "ON/OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.TextScaled = true
+Instance.new("UICorner", toggle)
+
+local box = Instance.new("TextBox", frame)
+box.Size = UDim2.new(.4,0,.3,0)
+box.Position = UDim2.new(.55,0,.45,0)
+box.Text = tostring(SPEED)
+box.PlaceholderText = "VEL"
+box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+box.TextColor3 = Color3.new(1,1,1)
+box.TextScaled = true
+Instance.new("UICorner", box)
+
+toggle.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	title.Text = enabled and "SPEED ON" or "SPEED OFF"
+end)
+
+-- VELOCIDAD (1 → 150)
+box.FocusLost:Connect(function()
+	local v = tonumber(box.Text)
+	if v then
+		SPEED = math.clamp(v,1,150)
+		box.Text = tostring(SPEED)
+	end
+end)
+
+-- SOFT SPEED
+RunService.Heartbeat:Connect(function()
+	if enabled and hum and hrp then
+		local dir = hum.MoveDirection
+		if dir.Magnitude > 0 then
+			local boost = Vector3.new(dir.X,0,dir.Z).Unit * SPEED * 0.08
+			hrp.CFrame = hrp.CFrame + boost
+		end
+	end
+end)
