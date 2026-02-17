@@ -1,80 +1,151 @@
--- Mini Hitbox Panel Pro (Jona Style)
+-- MINI BLACK HITBOX PANEL
 
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
 
-local Enabled = false
-local HitboxSize = 6
-local Boxes = {}
-local Names = {}
+local lp = Players.LocalPlayer
+local SIZE = 6
+local ENABLED = false
+local boxes = {}
 
--- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.ResetOnSpawn = false
 
+-- PANEL
 local panel = Instance.new("Frame", gui)
-panel.Size = UDim2.new(0,150,0,70)
-panel.Position = UDim2.new(0.05,0,0.45,0)
-panel.BackgroundColor3 = Color3.fromRGB(10,10,10)
-panel.Active = true
-panel.Draggable = true
+panel.Size = UDim2.fromOffset(180,75)
+panel.Position = UDim2.fromScale(.05,.5)
+panel.BackgroundColor3 = Color3.fromRGB(0,0,0)
+panel.BorderSizePixel = 0
+Instance.new("UICorner",panel).CornerRadius = UDim.new(0,10)
 
-local title = Instance.new("TextLabel", panel)
+-- TOP BAR
+local title = Instance.new("TextLabel",panel)
 title.Size = UDim2.new(1,0,0,22)
-title.BackgroundTransparency = 1
-title.Text = "Hitbox | OFF"
+title.Text = "HITBOX"
 title.TextColor3 = Color3.new(1,1,1)
-title.TextScaled = true
+title.BackgroundTransparency = 1
+title.TextSize = 13
 
-local toggle = Instance.new("TextButton", panel)
-toggle.Position = UDim2.new(0.05,0,0.45,0)
-toggle.Size = UDim2.new(0.4,0,0,22)
-toggle.Text = "OFF"
-toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+local status = Instance.new("TextLabel",panel)
+status.Position = UDim2.fromOffset(130,2)
+status.Size = UDim2.fromOffset(40,18)
+status.Text = "OFF"
+status.TextColor3 = Color3.fromRGB(255,0,0)
+status.BackgroundTransparency = 1
+status.TextSize = 12
+
+-- BUTTON
+local toggle = Instance.new("TextButton",panel)
+toggle.Position = UDim2.fromOffset(10,40)
+toggle.Size = UDim2.fromOffset(80,25)
+toggle.Text = "POWER"
+toggle.BackgroundColor3 = Color3.fromRGB(20,20,20)
 toggle.TextColor3 = Color3.new(1,1,1)
+toggle.TextSize = 12
+Instance.new("UICorner",toggle)
 
-local sizeBox = Instance.new("TextBox", panel)
-sizeBox.Position = UDim2.new(0.5,0,0.45,0)
-sizeBox.Size = UDim2.new(0.45,0,0,22)
-sizeBox.Text = tostring(HitboxSize)
-sizeBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-sizeBox.TextColor3 = Color3.new(1,1,1)
+-- SIZE INPUT
+local input = Instance.new("TextBox",panel)
+input.Position = UDim2.fromOffset(100,40)
+input.Size = UDim2.fromOffset(65,25)
+input.Text = tostring(SIZE)
+input.BackgroundColor3 = Color3.fromRGB(20,20,20)
+input.TextColor3 = Color3.new(1,1,1)
+input.TextSize = 12
+Instance.new("UICorner",input)
+
+-- DRAG
+local dragging=false
+local start,pos
+
+title.InputBegan:Connect(function(i)
+	if i.UserInputType==Enum.UserInputType.Touch then
+		dragging=true
+		start=i.Position
+		pos=panel.Position
+	end
+end)
+
+title.InputEnded:Connect(function()
+	dragging=false
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if dragging then
+		local d=i.Position-start
+		panel.Position=UDim2.new(pos.X.Scale,pos.X.Offset+d.X,pos.Y.Scale,pos.Y.Offset+d.Y)
+	end
+end)
+
+-- HITBOX
+local function make(char)
+	if boxes[char] then return end
+	local hrp=char:WaitForChild("HumanoidRootPart")
+
+	local hb=Instance.new("BoxHandleAdornment")
+	hb.Adornee=hrp
+	hb.Size=Vector3.new(SIZE,SIZE,SIZE)
+	hb.Transparency=0.45
+	hb.Color3=Color3.fromRGB(160,160,160)
+	hb.AlwaysOnTop=true
+	hb.ZIndex=5
+	hb.Parent=gui
+
+	local bb=Instance.new("BillboardGui",hrp)
+	bb.Size=UDim2.fromOffset(90,18)
+	bb.StudsOffset=Vector3.new(0,3,0)
+	bb.AlwaysOnTop=true
+
+	local name=Instance.new("TextLabel",bb)
+	name.Size=UDim2.fromScale(1,1)
+	name.BackgroundTransparency=1
+	name.Text=char.Name
+	name.TextColor3=Color3.new(1,1,1)
+	name.TextStrokeTransparency=0
+
+	boxes[char]={hb,bb}
+end
+
+local function clear()
+	for _,v in pairs(boxes) do
+		if v[1] then v[1]:Destroy() end
+		if v[2] then v[2]:Destroy() end
+	end
+	table.clear(boxes)
+end
+
+RunService.RenderStepped:Connect(function()
+	if not ENABLED then return end
+	for _,p in pairs(Players:GetPlayers()) do
+		if p~=lp and p.Character then
+			make(p.Character)
+		end
+	end
+end)
 
 toggle.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    toggle.Text = Enabled and "ON" or "OFF"
-    title.Text = Enabled and "Hitbox | ON" or "Hitbox | OFF"
-
-    if not Enabled then
-        for _,b in pairs(Boxes) do
-            if b then b:Destroy() end
-        end
-        Boxes = {}
-    end
+	ENABLED=not ENABLED
+	if ENABLED then
+		status.Text="ON"
+		status.TextColor3=Color3.fromRGB(0,255,0)
+	else
+		status.Text="OFF"
+		status.TextColor3=Color3.fromRGB(255,0,0)
+		clear()
+	end
 end)
 
-sizeBox.FocusLost:Connect(function()
-    local v = tonumber(sizeBox.Text)
-    if v then
-        HitboxSize = math.clamp(v,2,20)
-    end
-end)
-
--- NAME ESP
-local function addName(plr)
-    if plr == LP then return end
-
-    plr.CharacterAdded:Connect(function(char)
-        task.wait(1)
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        local bill = Instance.new("BillboardGui",hrp)
-        bill.Size = UDim2.new(0,100,0,25)
-        bill.AlwaysOnTop = true
-
-        local txt = Instance.new("TextLabel",bill)
-        txt.Size = UDim2.new(1,0,1,0)
-        txt.BackgroundTransparency = 1
-        txt.Text = plr.Name
+input.FocusLost:Connect(function()
+	local n=tonumber(input.Text)
+	if n then SIZE=n end
+	for _,v in pairs(boxes) do
+		if v[1] then
+			v[1].Size=Vector3.new(SIZE,SIZE,SIZE)
+		end
+	end
+end)        txt.Text = plr.Name
         txt.TextColor3 = Color3.new(1,1,1)
         txt.TextStrokeTransparency = 0
 
